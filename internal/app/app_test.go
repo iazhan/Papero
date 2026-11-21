@@ -3280,11 +3280,15 @@ type fakeUpdater struct {
 	progress   int64 // 非零时在 Fetch 里报一次进度
 	notes      []update.Note
 	notesErr   error
+	checks     int
 	askedAfter string // 上次 Notes 问的区间，用来核对版本范围
 	askedUpto  string
 }
 
-func (f *fakeUpdater) Check(context.Context) (*update.Release, error) { return f.rel, f.checkErr }
+func (f *fakeUpdater) Check(context.Context) (*update.Release, error) {
+	f.checks++
+	return f.rel, f.checkErr
+}
 
 func (f *fakeUpdater) Notes(_ context.Context, after, upto string) ([]update.Note, int, error) {
 	f.askedAfter, f.askedUpto = after, upto
@@ -3517,5 +3521,36 @@ func TestNoteLines(t *testing.T) {
 	}
 	if headings != 1 {
 		t.Errorf("标题行 %d 个，想要 1", headings)
+	}
+}
+
+// TestUpdateRateLimited 限速不是「更新失败」：要说清多久之后能再查，
+// 而且这段时间里手动点、自动查都不许再发请求。
+func TestUpdateRateLimited(t *testing.T) {
+	a, _ := newTestApp(t)
+	reset := time.Now().Add(9 * time.Minute).Truncate(time.Second)
+	f := &fakeUpdater{checkErr: &update.RateLimitError{Reset: reset}}
+	a.upd.svc = f
+
+	a.checkUpdate(true)
+	if !strings.Contains(a.updateHint(), "限速") {
+		t.Errorf("说明里没提限速：%q", a.updateHint())
+	}
+	if !a.upd.blockedUntil.Equal(reset) {
+		t.Errorf("退避到 %v，想要 %v", a.upd.blockedUntil, reset)
+	}
+
+	// 再点一次：不该再问 GitHub
+	before := f.checks
+	a.checkUpdate(true)
+	if f.checks != before {
+		t.Errorf("限速期间又发了 %d 次请求", f.checks-before)
+	}
+
+	// 自动检查也把下一次排到解除之后
+	tt := ui.NewTester(a.view, 1100, 760)
+	tt.Frame()
+	if !a.upd.next.Equal(reset) {
+		t.Errorf("下一次检查排在 %v，想要 %v", a.upd.next, reset)
 	}
 }

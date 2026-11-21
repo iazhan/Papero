@@ -19,9 +19,6 @@ var apiBase = "https://api.github.com"
 // sumsName 是 CI 生成的校验和文件（release.yml 里的 SHA256SUMS.txt）。
 const sumsName = "SHA256SUMS.txt"
 
-// ErrNoReleases 表示仓库还没有发布过任何版本（第一个 tag 之前）。
-var ErrNoReleases = errors.New("还没有发布过版本")
-
 // Release 是一个新版本，连同这个平台要下载的那个文件。
 type Release struct {
 	// Version 是 "0.2.1"，不带 v。
@@ -64,29 +61,11 @@ func Check(ctx context.Context, c *http.Client, repo, current string) (*Release,
 }
 
 func check(ctx context.Context, c *http.Client, repo, current, goos, goarch string) (*Release, error) {
-	url := apiBase + "/repos/" + repo + "/releases/latest"
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-	if err != nil {
-		return nil, err
-	}
-	// 不带头 User-Agent 的请求会被 GitHub 拒掉；Accept 固定 API 版本，
-	// 免得哪天默认字段变了把解析搞坏。
-	req.Header.Set("User-Agent", "papero-updater")
-	req.Header.Set("Accept", "application/vnd.github+json")
-	req.Header.Set("X-GitHub-Api-Version", "2022-11-28")
-
-	res, err := c.Do(req)
+	res, err := apiGet(ctx, c, apiBase+"/repos/"+repo+"/releases/latest")
 	if err != nil {
 		return nil, err
 	}
 	defer res.Body.Close()
-	switch res.StatusCode {
-	case http.StatusOK:
-	case http.StatusNotFound:
-		return nil, ErrNoReleases
-	default:
-		return nil, fmt.Errorf("GitHub：%s", res.Status)
-	}
 
 	var body struct {
 		TagName string `json:"tag_name"`

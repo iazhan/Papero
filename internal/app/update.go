@@ -114,8 +114,9 @@ type updateState struct {
 	overlay bool
 	// updatedTo 是这次启动是从旧版本升上来的那个版本号，空 = 不是升级。
 	updatedTo string
-	// next 是下次自动检查的时刻。
-	next time.Time
+	// next 是下次自动检查的时刻；blockedUntil 是限速期间不许再查的时刻。
+	next         time.Time
+	blockedUntil time.Time
 	// relaunch 重启应用；测试换掉它，免得测试里真的把进程重启。
 	relaunch func()
 }
@@ -127,7 +128,10 @@ func (a *App) updateTick(c *ui.Context) {
 	if u.next.IsZero() {
 		u.next = now.Add(firstUpdateCheck)
 	}
-	if !now.Before(u.next) {
+	if blocked := u.blockedUntil; !blocked.IsZero() && now.Before(blocked) {
+		// 限速还没解除：下一次排到解除之后，中间一帧都不查
+		u.next = blocked
+	} else if !now.Before(u.next) {
 		u.next = now.Add(updateEvery)
 		if !a.cfg.NoUpdateCheck {
 			a.checkUpdate(false)
@@ -154,6 +158,13 @@ func (a *App) checkUpdate(manual bool) {
 	if u.ready != "" {
 		if manual {
 			u.status = fmt.Sprintf(i18n.T("settings.update.ready"), "v"+u.ready)
+		}
+		return
+	}
+	if u.blockedUntil.After(time.Now()) {
+		// 点也没用：先把原因说清楚，别又撞一次墙
+		if manual {
+			u.status = (&update.RateLimitError{Reset: u.blockedUntil}).Error()
 		}
 		return
 	}
@@ -189,6 +200,13 @@ func (a *App) checked(rel *update.Release, err error) {
 		if errors.Is(err, update.ErrNoReleases) {
 			u.status = i18n.T("settings.update.none")
 			u.rel = nil
+			return
+		}
+		var rl *update.RateLimitError
+		if errors.As(err, &rl) {
+			// 限速不是「更新失败」，是一段时间内查不了：说清多久之后能再查
+			u.status = rl.Error()
+			u.blockedUntil = rl.Reset
 			return
 		}
 		u.status = fmt.Sprintf(i18n.T("settings.update.failed"), err.Error())

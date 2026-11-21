@@ -11,8 +11,10 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestCompare(t *testing.T) {
@@ -277,5 +279,55 @@ func TestNotesCap(t *testing.T) {
 	}
 	if notes[0].Version != "0.2.100" {
 		t.Errorf("第一条是 %s", notes[0].Version)
+	}
+}
+
+// TestAPIRateLimit 403 带「次数用完」的头要认成限速，而不是一句光秃秃的 403。
+func TestAPIRateLimit(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-RateLimit-Limit", "60")
+		w.Header().Set("X-RateLimit-Remaining", "0")
+		w.Header().Set("X-RateLimit-Reset", strconv.FormatInt(time.Now().Add(9*time.Minute).Unix(), 10))
+		w.WriteHeader(http.StatusForbidden)
+		io.WriteString(w, `{"message":"API rate limit exceeded for 50.7.253.170."}`)
+	}))
+	defer srv.Close()
+	old := apiBase
+	apiBase = srv.URL
+	defer func() { apiBase = old }()
+
+	_, err := check(context.Background(), http.DefaultClient, Repo, "0.2.0", "windows", "amd64")
+	var rl *RateLimitError
+	if !errors.As(err, &rl) {
+		t.Fatalf("403 + 次数用完应当是限速，实际 %v", err)
+	}
+	if rl.Reset.IsZero() {
+		t.Error("没解出恢复时间")
+	}
+	if msg := err.Error(); !strings.Contains(msg, "限速") || !strings.Contains(msg, "分钟") {
+		t.Errorf("错误文案 = %q", msg)
+	}
+
+	// 429 一律算限速
+	srv429 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusTooManyRequests)
+		io.WriteString(w, `{"message":"too many"}`)
+	}))
+	defer srv429.Close()
+	apiBase = srv429.URL
+	if _, err := check(context.Background(), http.DefaultClient, Repo, "0.2.0", "windows", "amd64"); !errors.As(err, &rl) {
+		t.Errorf("429 应当算限速，实际 %v", err)
+	}
+
+	// 其它错误：把 GitHub 的 message 抄出来
+	srv500 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+		io.WriteString(w, `{"message":"Server Error"}`)
+	}))
+	defer srv500.Close()
+	apiBase = srv500.URL
+	_, err = check(context.Background(), http.DefaultClient, Repo, "0.2.0", "windows", "amd64")
+	if err == nil || !strings.Contains(err.Error(), "Server Error") {
+		t.Errorf("500 的错误 = %v", err)
 	}
 }

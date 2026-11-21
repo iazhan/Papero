@@ -100,21 +100,11 @@ type apiRelease struct {
 
 func releases(ctx context.Context, c *http.Client, repo string, page int) ([]apiRelease, error) {
 	url := fmt.Sprintf("%s/repos/%s/releases?per_page=100&page=%d", apiBase, repo, page)
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("User-Agent", "papero-updater")
-	req.Header.Set("Accept", "application/vnd.github+json")
-	req.Header.Set("X-GitHub-Api-Version", "2022-11-28")
-	res, err := c.Do(req)
+	res, err := apiGet(ctx, c, url)
 	if err != nil {
 		return nil, err
 	}
 	defer res.Body.Close()
-	if res.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("GitHub：%s", res.Status)
-	}
 	var list []apiRelease
 	if err := json.NewDecoder(res.Body).Decode(&list); err != nil {
 		return nil, fmt.Errorf("releases：%w", err)
