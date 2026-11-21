@@ -158,20 +158,29 @@ jobs:
           sha256sum papero-* > SHA256SUMS.txt
 
       # 应用里的「更新日志」显示的就是 release 正文，所以正文要是人话：
-      # 从 CHANGELOG.md 里取这一版那一节，而不是让 GitHub 列提交标题。
+      # 从 CHANGELOG 里取这一版那一节，而不是让 GitHub 列提交标题。
+      #
+      # 两份日志拼成一份双语正文：英文在上，`<!-- lang:zh -->` 之下是中文。
+      # 客户端按界面语言切（internal/update 的 InLang），切换语言不用重新拉。
       - name: 取出这一版的更新日志
         env:
           TAG: ${{ github.ref_name }}
         run: |
-          awk -v v="${TAG#v}" '
-            $0 == "## " v { insec = 1; next }
-            /^## / && insec { exit }
-            insec { print }
-          ' CHANGELOG.md > notes.md
-          if [ -s notes.md ]; then
-            echo "用了 CHANGELOG.md 的 ${TAG#v} 一节（$(wc -l < notes.md) 行）"
+          ver="${TAG#v}"
+          section() {
+            awk -v v="$1" '$0 == "## " v { on = 1; next } /^## / && on { exit } on { print }' "$2"
+          }
+          zh=$(section "$ver" CHANGELOG.md)
+          en=$(section "$ver" CHANGELOG.en.md)
+          if [ -n "$en" ] && [ -n "$zh" ]; then
+            printf '%s\n\n<!-- lang:zh -->\n\n%s\n' "$en" "$zh" > notes.md
+            echo "${ver}：中英双语（$(wc -l < notes.md) 行）"
+          elif [ -n "$zh" ]; then
+            printf '%s\n' "$zh" > notes.md
+            echo "${ver}：只有中文，英文那份没写这一节"
           else
-            echo "CHANGELOG.md 里没有 ${TAG#v}，改让 GitHub 生成"
+            : > notes.md
+            echo "CHANGELOG 里没有 ${ver}，改让 GitHub 生成"
           fi
 
       - name: 建 Release

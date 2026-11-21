@@ -3554,3 +3554,40 @@ func TestUpdateRateLimited(t *testing.T) {
 		t.Errorf("下一次检查排在 %v，想要 %v", a.upd.next, reset)
 	}
 }
+
+// TestNotesFollowLanguage 更新日志存双语原文，按界面语言渲染——切语言不用重拉。
+func TestNotesFollowLanguage(t *testing.T) {
+	a, _ := newTestApp(t)
+	a.open("notes/欢迎.md")
+	a.upd.notes = []update.Note{{
+		Version: appVersion,
+		Notes:   "### Updating\n\n- English bullet\n\n<!-- lang:zh -->\n\n### 自更新\n\n- 中文条目\n",
+	}}
+	a.upd.notesTotal = 1
+	a.upd.overlay = true
+
+	render := func(lang string) *ui.Tester {
+		a.cfg.Language = lang
+		tt := ui.NewTester(a.view, 1100, 760)
+		tt.Frame()
+		tt.Frame()
+		return tt
+	}
+
+	zh := render("")
+	if !zh.HasText("中文条目") {
+		t.Errorf("中文界面没显示中文日志：%q", zh.Texts())
+	}
+	if zh.HasText("English bullet") {
+		t.Error("中文界面里混进了英文")
+	}
+
+	en := render("en")
+	if !en.HasText("English bullet") {
+		t.Errorf("英文界面没显示英文日志：%q", en.Texts())
+	}
+	if en.HasText("中文条目") {
+		t.Error("英文界面里混进了中文")
+	}
+	i18n.SetLanguage("")
+}

@@ -495,7 +495,18 @@ func (a *App) notesSubtitle() string {
 	return fmt.Sprintf(i18n.T("update.notes.subtitle"), "v"+from, "v"+to, count)
 }
 
+// noteLang 是取更新日志用的语言："zh" 或 "en"，跟着界面走。
+func noteLang() string {
+	if i18n.English() {
+		return "en"
+	}
+	return "zh"
+}
+
 // noteBlock 画一个版本：版本号一行，正文按行摊开。
+//
+// 正文存的是双语原文（英文在上、`<!-- lang:zh -->` 之下是中文），在这里按当前界面
+// 语言切——所以切换语言时浮层立刻跟着变，不用重新去拉一遍。
 func (a *App) noteBlock(c *ui.Context, t *ui.Theme, n update.Note) {
 	ui.Column(c).Gap(5).Children(func() {
 		ui.Row(c).Gap(8).AlignItems(ui.Center).Children(func() {
@@ -504,7 +515,7 @@ func (a *App) noteBlock(c *ui.Context, t *ui.Theme, n update.Note) {
 				ui.Text(c, i18n.T("update.notes.current")).FontSize(9.5).TextColor(t.TextMuted)
 			}
 		})
-		for _, line := range noteLines(n.Notes) {
+		for _, line := range noteLines(update.InLang(n.Notes, noteLang())) {
 			switch {
 			case line.Text == "":
 				ui.Box(c).Height(3)

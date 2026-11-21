@@ -331,3 +331,22 @@ func TestAPIRateLimit(t *testing.T) {
 		t.Errorf("500 的错误 = %v", err)
 	}
 }
+
+// TestInLang 双语正文按界面语言切一半；没有分界线的老日志原样给出。
+func TestInLang(t *testing.T) {
+	md := "English notes\n\n<!-- lang:zh -->\n\n中文说明\n"
+
+	if got := InLang(md, "zh"); got != "中文说明" {
+		t.Errorf("中文 = %q", got)
+	}
+	if got := InLang(md, "en"); got != "English notes" {
+		t.Errorf("英文 = %q", got)
+	}
+	// 语言为空（默认中文界面）也按中文取；这里只有英文可给时才退回英文
+	if got := InLang("English\n<!-- lang:zh -->\n", "zh"); got != "English" {
+		t.Errorf("中文是空的时候应当退回英文，实际 %q", got)
+	}
+	if got := InLang("只有中文的旧日志", "en"); got != "只有中文的旧日志" {
+		t.Errorf("没有分界线时原样返回，实际 %q", got)
+	}
+}
