@@ -492,7 +492,8 @@ func (a *App) notesSubtitle() string {
 	if count == 0 {
 		return ""
 	}
-	return fmt.Sprintf(i18n.T("update.notes.subtitle"), "v"+from, "v"+to, count)
+	// 英文的 release / releases 要分单复数，中文两条一样
+	return i18n.Tn(count, "update.notes.subtitle.one", "update.notes.subtitle.other", "v"+from, "v"+to, count)
 }
 
 // noteLang 是取更新日志用的语言："zh" 或 "en"，跟着界面走。
@@ -539,13 +540,26 @@ type noteLine struct {
 //
 // 更新日志浮层是自己排的字，塞不进 Markdown 渲染器；这里只做最小处理：
 // 标题留字去 #（另外打个标记，画的时候加粗）、列表换成 •、链接留文字、
-// ** 与 ` 去掉、PR 地址缩成 #123。空行只留一个，末尾的空白行去掉。
+// ** 与 ` 去掉、PR 地址缩成 #123。
+//
+// 硬换行要接回去：CHANGELOG 里的英文是按 80 列手折的，一行一个 Text 会碎成一堆
+// 长短不齐的短行；接成一段交给 Text 自己折，宽度才跟着窗口走。空行只留一个，
+// 末尾的空白去掉。
 func noteLines(md string) []noteLine {
 	var out []noteLine
+	var buf string // 正在攒的段落或列表项
+	heading := false
 	blank := true
+	flush := func() {
+		if buf != "" {
+			out = append(out, noteLine{Text: buf, Heading: heading})
+			buf, heading = "", false
+		}
+	}
 	for _, line := range strings.Split(strings.ReplaceAll(md, "\r\n", "\n"), "\n") {
 		line = strings.TrimRight(line, " \t")
 		if strings.TrimSpace(line) == "" {
+			flush()
 			if !blank {
 				out = append(out, noteLine{})
 			}
@@ -554,27 +568,35 @@ func noteLines(md string) []noteLine {
 		}
 		blank = false
 		trimmed := strings.TrimSpace(line)
-		heading := false
 		switch {
 		case strings.HasPrefix(trimmed, "#"):
-			line = strings.TrimSpace(strings.TrimLeft(trimmed, "#"))
+			flush()
+			buf = strings.TrimSpace(strings.TrimLeft(trimmed, "#"))
 			heading = true
 		case noteBullet.MatchString(line):
-			line = "• " + noteBullet.ReplaceAllString(line, "")
+			flush()
+			buf = "• " + noteBullet.ReplaceAllString(line, "")
 		default:
-			line = trimmed
-		}
-		line = noteLink.ReplaceAllString(line, "$1")
-		line = noteMark.ReplaceAllString(line, "")
-		line = strings.TrimSpace(noteBare.ReplaceAllStringFunc(line, func(u string) string {
-			// GitHub 自动生成的条目以 PR 地址结尾，序号比网址好读
-			if i := strings.LastIndex(u, "/pull/"); i >= 0 {
-				return "#" + u[i+len("/pull/"):]
+			// 接着上一段（英文的硬折行就是这么接回去的）
+			if buf == "" {
+				buf = trimmed
+			} else {
+				buf += " " + trimmed
 			}
-			return u
-		}))
-		out = append(out, noteLine{Text: line, Heading: heading})
+		}
+		if buf != "" {
+			buf = noteLink.ReplaceAllString(buf, "$1")
+			buf = noteMark.ReplaceAllString(buf, "")
+			buf = strings.TrimSpace(noteBare.ReplaceAllStringFunc(buf, func(u string) string {
+				// GitHub 自动生成的条目以 PR 地址结尾，序号比网址好读
+				if i := strings.LastIndex(u, "/pull/"); i >= 0 {
+					return "#" + u[i+len("/pull/"):]
+				}
+				return u
+			}))
+		}
 	}
+	flush()
 	for len(out) > 0 && out[len(out)-1].Text == "" {
 		out = out[:len(out)-1]
 	}

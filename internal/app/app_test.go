@@ -3522,6 +3522,17 @@ func TestNoteLines(t *testing.T) {
 	if headings != 1 {
 		t.Errorf("标题行 %d 个，想要 1", headings)
 	}
+
+	// 硬折行接回一段：英文 CHANGELOG 是按 80 列手折的，一行一个 Text 会碎成短行
+	wrapped := noteLines("第一行\n第二行\n\n- 列表项一\n  续行\n")
+	var got2 []string
+	for _, l := range wrapped {
+		got2 = append(got2, l.Text)
+	}
+	want2 := []string{"第一行 第二行", "", "• 列表项一 续行"}
+	if !slices.Equal(got2, want2) {
+		t.Errorf("折行合并：\n%q\n想要\n%q", got2, want2)
+	}
 }
 
 // TestUpdateRateLimited 限速不是「更新失败」：要说清多久之后能再查，
