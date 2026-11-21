@@ -5,14 +5,23 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Papero — 本地优先的 Markdown 知识库</title>
 <meta name="description" content="Papero 是世界语里的「纸」。以 Markdown 为主、但不止 Markdown 的知识库：文稿、PDF、Word、图片与白板在同一个窗口，全部由 Go 在 GPU 上原生绘制，没有 WebView。">
-<meta name="theme-color" content="#f6f5f1" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#141413" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1b1b1a" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-128.png">
+<link rel="canonical" href="https://papero.azhan.me/">
 <meta property="og:type" content="website">
+<meta property="og:site_name" content="Papero">
+<meta property="og:url" content="https://papero.azhan.me/">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:locale:alternate" content="en_US">
 <meta property="og:title" content="Papero — 本地优先的 Markdown 知识库">
 <meta property="og:description" content="文稿、PDF、Word、图片与白板在同一个窗口，全部由 Go 原生绘制。一个可执行文件，双击就能用。">
-<meta property="og:image" content="img/hero.png">
+<!-- og:image 必须是绝对地址，分享卡片才会显示；这里带上了正式域名 -->
+<meta property="og:image" content="https://papero.azhan.me/img/hero.png">
+<meta property="og:image:width" content="2800">
+<meta property="og:image:height" content="1880">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -21,15 +30,14 @@
 <header class="header" id="header">
   <div class="wrap header-inner">
     <a class="brand" href="#top" aria-label="Papero 首页">
-      <img class="brand-mark" src="icon.svg" alt="" width="26" height="26">
+      <img class="brand-mark" src="icon.svg" alt="" width="25" height="28">
       <span class="brand-name">Papero</span>
-      <span class="brand-ver">0.2.1</span>
+      <span class="brand-ver" data-version>0.2.1</span>
     </a>
 
     <nav class="nav" aria-label="主导航">
       <a href="#principles" data-i18n="nav.principles">原则</a>
       <a href="#features" data-i18n="nav.features">功能</a>
-      <a href="#shots" data-i18n="nav.shots">界面</a>
       <a href="#formats" data-i18n="nav.formats">能打开什么</a>
       <a href="https://github.com/iazhan/Papero" target="_blank" rel="noopener">GitHub<span class="ext">↗</span></a>
     </nav>
@@ -40,7 +48,8 @@
         <svg class="i-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.6v2.2M12 19.2v2.2M2.6 12h2.2M19.2 12h2.2M5.4 5.4l1.6 1.6M17 17l1.6 1.6M18.6 5.4L17 7M7 17l-1.6 1.6"/></svg>
         <svg class="i-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8.2 8.2 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/></svg>
       </button>
-      <a class="btn btn-primary btn-sm" href="#download" data-i18n="nav.dl">下载</a>
+      <!-- 下载按钮的地址由 app.js 按平台改写；这里的 href 只是没脚本时的兜底 -->
+      <a class="btn btn-primary btn-sm" href="https://github.com/iazhan/Papero/releases/latest/download/papero-windows-amd64.exe" data-download data-i18n="nav.dl">下载</a>
     </div>
   </div>
 </header>
@@ -51,17 +60,17 @@
   <!-- 首屏 -->
   <section class="hero">
     <div class="wrap">
-      <p class="eyebrow"><span class="dot"></span><span data-i18n="hero.eyebrow">Windows 10+ · 一个可执行文件 · MIT</span></p>
+      <p class="eyebrow"><span class="dot"></span><span id="eyebrow" data-i18n="hero.eyebrow">Windows 10+ · 一个可执行文件 · MIT</span></p>
       <h1 data-i18n="hero.title">笔记，放在<br>一个文件夹里。</h1>
       <p class="lede" data-i18n="hero.lede">Papero 是世界语里的「纸」。它把 Markdown、PDF、Word、图片和白板放进同一个窗口，全部由 Go 在 GPU 上原生绘制——没有 WebView，没有 Electron，没有 JavaScript。</p>
       <div class="cta">
-        <a class="btn btn-primary btn-lg" href="#download" data-i18n="hero.cta1">下载 Windows 版</a>
+        <a class="btn btn-primary btn-lg" id="ctaDownload" href="https://github.com/iazhan/Papero/releases/latest/download/papero-windows-amd64.exe" data-download data-i18n="hero.cta1">下载 Windows 版</a>
         <a class="btn btn-lg" href="https://github.com/iazhan/Papero" target="_blank" rel="noopener" data-i18n="hero.cta2">在 GitHub 上看源码</a>
       </div>
-      <p class="meta" data-i18n="hero.meta">v0.2.1 · 约 25 MB · 免安装 · 开源</p>
+      <p class="meta" data-i18n="hero.meta">v{v} · 约 25 MB · 免安装 · 仅 Windows 实机验证</p>
 
       <figure class="hero-shot reveal">
-        <img src="img/hero.png" width="1430" height="1000" alt="Papero 主窗口：左侧是知识库目录，右侧是一篇正在编辑的 Markdown 文稿，里面有标题、任务框、引用、有序列表、表格和代码块。">
+        <img src="img/hero.png" data-src-en="img/hero-en.png" data-src-dark="img/hero-dark.png" data-src-en-dark="img/hero-en-dark.png" width="1400" height="940" data-alt-en="The Papero window: a vault in the sidebar, a Markdown note with tasks, a quote, a table and a code block." alt="Papero 主窗口：左侧是知识库目录，右侧是一篇正在编辑的 Markdown 文稿，里面有标题、任务框、引用、表格和代码块。">
       </figure>
     </div>
   </section>
@@ -106,7 +115,7 @@
   </section>
 
   <!-- 功能 -->
-  <section id="features" class="section section-alt">
+  <section id="features" class="section">
     <div class="wrap">
       <div class="section-head reveal">
         <p class="label" data-i18n="f.label">功能</p>
@@ -125,7 +134,7 @@
           <p data-i18n="f.2.b">输入 <code>[[</code> 自动补全全库；改名时全库引用跟着改，删除前告诉你会断哪几篇。</p>
         </article>
         <article class="feature reveal">
-          <span class="ficon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="7" r="2.2"/><circle cx="18" cy="6" r="2.2"/><circle cx="12.5" cy="18" r="2.2"/><path d="M8.1 6.9l7.7-.7M7.4 9l3.9 7M16.6 8l-3.2 7.9"/></svg></span>
+          <span class="ficon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="7" r="2.1" fill="currentColor" stroke="none"/><circle cx="18" cy="6" r="2.1" fill="currentColor" stroke="none"/><circle cx="12.5" cy="18" r="2.1" fill="currentColor" stroke="none"/><path d="M8.1 6.9l7.7-.7M7.4 9l3.9 7M16.6 8l-3.2 7.9"/></svg></span>
           <h3 data-i18n="f.3.h">知识图谱</h3>
           <p data-i18n="f.3.b">按双链自动布局，按目录分组着色，双击节点跳到那篇文稿；可以嵌在窗口里，也能独立成窗。</p>
         </article>
@@ -140,7 +149,7 @@
           <p data-i18n="f.5.b"><code>.excalidraw</code> 原生打开、原生画，和 Excalidraw 文件互通——拿去别处也能用。</p>
         </article>
         <article class="feature reveal">
-          <span class="ficon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12.5h3.2L9.7 19 14 5.5h6"/></svg></span>
+          <span class="ficon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 5.2H7.6l5.2 6.8-5.2 6.8H17"/></svg></span>
           <h3 data-i18n="f.6.h">TeX 公式</h3>
           <p data-i18n="f.6.b">行内公式跟着基线走，块级公式各自居中；分数线、根号、上下标、求和上下限都是排出来的。</p>
         </article>
@@ -158,42 +167,8 @@
     </div>
   </section>
 
-  <!-- 截图 -->
-  <section id="shots" class="section">
-    <div class="wrap">
-      <div class="section-head reveal">
-        <p class="label" data-i18n="s.label">界面</p>
-        <h2 data-i18n="s.title">自己看</h2>
-        <p class="sub" data-i18n="s.sub">下面每一张都是程序自己渲染出来的截图，没有画一张示意图。</p>
-      </div>
-
-      <div class="shots">
-        <figure class="shot reveal">
-          <img src="img/start.png" width="1430" height="1000" loading="lazy" alt="起始页：中间是新建文稿、快速搜索、打开知识库三个动作和最近打开列表。">
-          <figcaption data-i18n="s.1">起始页：空窗口也有事可做。</figcaption>
-        </figure>
-        <figure class="shot reveal">
-          <img src="img/slash.png" width="1430" height="1000" loading="lazy" alt="斜杠菜单：上方是按类型上色的图标网格，下方是代码块、公式、分隔线、表格。">
-          <figcaption data-i18n="s.2">空块里打一个 <kbd>/</kbd>，插入菜单就出来了。</figcaption>
-        </figure>
-        <figure class="shot reveal">
-          <img src="img/pdf.png" width="1430" height="1000" loading="lazy" alt="PDF 查看器：左侧缩略图与批注，右侧按原版面重排的页面，文字可以选中。">
-          <figcaption data-i18n="s.3">PDF 按原版面重排，文字可选中、可高亮。</figcaption>
-        </figure>
-        <figure class="shot reveal">
-          <img src="img/board.png" width="1430" height="1000" loading="lazy" alt="白板：工具栏有矩形、椭圆、菱形、箭头、画笔和文字，画布上是手绘风格的色块。">
-          <figcaption data-i18n="s.4">白板与 Excalidraw 互通。</figcaption>
-        </figure>
-        <figure class="shot shot-wide reveal">
-          <img src="img/graph.png" width="1430" height="1000" loading="lazy" alt="知识图谱：文稿节点按双链连成网，按目录分组着色。">
-          <figcaption data-i18n="s.5">知识图谱：双链画出来的关系网，按目录着色。</figcaption>
-        </figure>
-      </div>
-    </div>
-  </section>
-
   <!-- 能打开什么 -->
-  <section id="formats" class="section section-alt">
+  <section id="formats" class="section">
     <div class="wrap">
       <div class="section-head reveal">
         <p class="label" data-i18n="m.label">能打开什么</p>
@@ -217,77 +192,13 @@
       </div>
     </div>
   </section>
-
-  <!-- 外观 -->
-  <section id="theme-demo" class="section">
-    <div class="wrap theme-grid">
-      <div class="theme-copy reveal">
-        <p class="label" data-i18n="t.label">外观</p>
-        <h2 data-i18n="t.title">浅色、深色，跟随桌面</h2>
-        <p class="sub" data-i18n="t.body">界面用中性灰，正文是一张白纸。默认跟随系统，也可以在设置里挑一套自己的——三个颜色就够派生全部配色，这个网站也一样。</p>
-
-        <div class="theme-try">
-          <span class="try-label" data-i18n="t.try">试试看</span>
-          <div class="seg" role="radiogroup" aria-label="主题" data-i18n-label="a11y.themeGroup">
-            <button type="button" role="radio" data-set="light" aria-checked="false" data-i18n="t.light">浅色</button>
-            <button type="button" role="radio" data-set="dark" aria-checked="false" data-i18n="t.dark">深色</button>
-            <button type="button" role="radio" data-set="auto" aria-checked="false" data-i18n="t.auto">跟随系统</button>
-          </div>
-        </div>
-      </div>
-
-      <figure class="theme-shot reveal">
-        <img src="img/dark.png" width="1430" height="1000" loading="lazy" alt="Papero 的深色模式：深灰界面，正文区域是一张深色纸，侧栏与文稿对比清晰。">
-        <figcaption data-i18n="t.cap">深色模式：同一个界面，换三个颜色。</figcaption>
-      </figure>
-    </div>
-  </section>
-
-  <!-- 下载 -->
-  <section id="download" class="section">
-    <div class="wrap">
-      <div class="dl reveal">
-        <div class="dl-head">
-          <p class="label" data-i18n="d.label">下载</p>
-          <h2 data-i18n="d.title">一个文件，双击就能用</h2>
-          <p class="sub" data-i18n="d.sub">免安装，不需要运行时。Windows 是唯一在真机上验证过的平台。</p>
-        </div>
-
-        <ul class="dl-list">
-          <li>
-            <div class="dl-name">
-              <strong>Windows</strong>
-              <span data-i18n="d.win">10 及以上 · x64</span>
-            </div>
-            <a class="btn btn-primary" href="https://github.com/iazhan/Papero/releases/download/v0.2.1/papero-windows-amd64.exe" rel="noopener" data-i18n="d.get">下载 v0.2.1</a>
-          </li>
-          <li>
-            <div class="dl-name">
-              <strong>Linux</strong>
-              <span data-i18n="d.linux">amd64 · 实验性，没有在真机上启动过</span>
-            </div>
-            <a class="btn" href="https://github.com/iazhan/Papero/releases/download/v0.2.1/papero-linux-amd64" rel="noopener" data-i18n="d.get2">下载</a>
-          </li>
-          <li>
-            <div class="dl-name">
-              <strong>macOS</strong>
-              <span data-i18n="d.mac">Apple 芯片 · 实验性，同上</span>
-            </div>
-            <a class="btn" href="https://github.com/iazhan/Papero/releases/download/v0.2.1/papero-darwin-arm64" rel="noopener" data-i18n="d.get2b">下载</a>
-          </li>
-        </ul>
-
-        <p class="dl-note" data-i18n="d.note">所有版本、校验和与源码都在 <a href="https://github.com/iazhan/Papero/releases/latest" rel="noopener">GitHub Releases</a>。用 Go 1.27+ 也能自己编：<code>go build -trimpath -ldflags="-s -w" .</code></p>
-      </div>
-    </div>
-  </section>
 </main>
 
 <footer class="footer">
   <div class="wrap footer-inner">
     <div class="footer-brand">
       <a class="brand" href="#top">
-        <img class="brand-mark" src="icon.svg" alt="" width="24" height="24">
+        <img class="brand-mark" src="icon.svg" alt="" width="22" height="25">
         <span class="brand-name">Papero</span>
       </a>
       <p data-i18n="ft.line">本地优先的 Markdown 知识库。文稿是文件，界面是画出来的。</p>
@@ -296,8 +207,8 @@
     <nav class="footer-col" aria-label="产品">
       <h4 data-i18n="ft.product">产品</h4>
       <a href="#features" data-i18n="nav.features">功能</a>
-      <a href="#shots" data-i18n="nav.shots">界面</a>
-      <a href="#download" data-i18n="nav.dl">下载</a>
+      <a href="#formats" data-i18n="nav.formats">能打开什么</a>
+      <a href="https://github.com/iazhan/Papero/releases/latest" rel="noopener" data-i18n="nav.dl">下载</a>
     </nav>
 
     <nav class="footer-col" aria-label="资源">
@@ -310,7 +221,10 @@
     <nav class="footer-col" aria-label="致谢">
       <h4 data-i18n="ft.credit">致谢</h4>
       <a href="https://github.com/egoist/mygo" rel="noopener">MyGo</a>
+      <a href="https://github.com/Ciao1019/ArcMD" rel="noopener">ArcMD</a>
+      <a href="https://github.com/oneo-me/onevra" rel="noopener">Onevra</a>
       <a href="https://excalidraw.com" rel="noopener">Excalidraw</a>
+      <a href="https://iconmcp.com" rel="noopener">IconMCP</a>
       <a href="https://lucide.dev" rel="noopener">Lucide</a>
     </nav>
   </div>

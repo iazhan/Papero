@@ -127,8 +127,38 @@ if !tt.HasText("恢复默认") { ... }
 | `docs/images/` | 文档引用的图，命名 `screenshot-*.png` |
 | `design/icons/` | 图标源：当前这套（3 个 SVG + `png-flat/`），进版本库 |
 | `design/icons/_old/` | 图标的历史版本，本地留档，不进版本库 |
+| `site/` | 官网（纯静态，无构建）。发到 GitHub Pages / Vercel |
 
 截图**不要**再往 `build/` 里放——那是产物目录，一次调试就能堆两百张。
+
+## 官网
+
+`site/` 是一份没有构建步骤的静态页面：`index.html` + `style.css` + `app.js` + `img/`。
+配色不另挑，直接抄 `internal/theme/theme.go` 的 Presets 与 Derive 比例（页首注释里有对应关系）。
+
+**线上地址 https://papero.azhan.me/**：GitHub Pages 托管，由 `.github/workflows/pages.yml`
+发布（推 main 上 `site/**` 的改动才跑）。`site/CNAME` 里写着域名，别删——Actions 部署靠
+它带上自定义域名。DNS 是 `papero.azhan.me CNAME iazhan.github.io`。
+
+`site/robots.txt` 与 `sitemap.xml`、`index.html` 里的 `canonical` / `og:url` / `og:image`
+都写死了这个域名。换域名时这四处要一起改（`og:image` 必须是绝对地址，否则分享卡片没图）。
+
+首屏那张截图画的是真程序：中英 × 浅深共四张，切语言或切明暗时换图
+（`data-src-en` / `data-src-dark` / `data-src-en-dark`）。重画：
+
+```bash
+go run . -shot site/img/hero.png         -open "tmp/site-demo/zh/周记.md"            -width 1400 -height 940 -scale 2 -lang zh
+go run . -shot site/img/hero-dark.png    -open "tmp/site-demo/zh/周记.md"            -width 1400 -height 940 -scale 2 -lang zh -theme dark
+go run . -shot site/img/hero-en.png      -open "tmp/site-demo/en/Week in review.md" -width 1400 -height 940 -scale 2 -lang en
+go run . -shot site/img/hero-en-dark.png -open "tmp/site-demo/en/Week in review.md" -width 1400 -height 940 -scale 2 -lang en -theme dark
+```
+
+`tmp/site-demo/` 是给截图用的演示知识库（gitignore）。
+
+下载按钮不写死版本：地址是 `/releases/latest/download/<产物名>`，永远指向最新一版，
+所以**只要不改产物名就不用动链接**。页面上显示的版本号会先从 Releases API 现取
+（限流时自动退回 HTML 里那份），发版时仍要把 `hero.meta` 与 `site/app.js` 顶部的
+`version` 兜底值一起改成新版本。
 
 ## 打包
 

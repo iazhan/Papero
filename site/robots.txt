@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://papero.azhan.me/sitemap.xml

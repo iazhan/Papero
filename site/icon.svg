@@ -1,6 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <title>Papero (flat)</title>
-  <!-- 无底色版：纸片本身要有轮廓，否则在浅色背景上会消失 -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="58 32 396 448" width="396" height="448">
+  <title>Papero</title>
+  <!-- 与 design/icons/papero-icon-flat.svg 是同一张图，只把 viewBox 收进画的内容：
+       原图 512 见方而图形只占中间一半，缩到 28px 放在标题栏里会显得又小又飘。 -->
   <g transform="translate(256,256) scale(1.3) translate(-252,-249.5) translate(0,14)">
     <path d="M214 120 C212 88 194 72 178 70 M214 120 C218 92 238 76 254 80" fill="none" stroke="#EA6A1F" stroke-width="11" stroke-linecap="round"/>
     <rect x="106" y="110" width="228" height="291" rx="39" fill="#FFFFFF" stroke="#B8B2A0" stroke-width="7"/>

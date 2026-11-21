@@ -1,0 +1,49 @@
+# 官网（site/）发到 GitHub Pages，对外地址是 https://papero.azhan.me/。
+#
+# 只推 site/ 的改动才跑：官网和程序是两条发布线，改 Go 代码不该顺带重发一次网页。
+#
+# 三件事只做一次（之后交给这个 workflow）：
+#   1. 仓库 Settings → Pages → Source 选 "GitHub Actions"；
+#   2. 同一页面的 Custom domain 填 papero.azhan.me，保存后等证书签发，再勾 Enforce HTTPS；
+#   3. DNS 加一条 papero.azhan.me CNAME iazhan.github.io。
+# site/CNAME 存着域名，别删——Actions 部署时靠它把自定义域名带上去。
+name: Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "site/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 连着推两次时，前一次没发完就不用发了——Pages 只认最后一份。
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: 发布 site/
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/configure-pages@v5
+
+      # 静态站点，没有构建步骤：site/ 整个目录就是产物。
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - id: deploy
+        uses: actions/deploy-pages@v4
