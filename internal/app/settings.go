@@ -19,7 +19,7 @@ import (
 // 分成五页：通用（知识库与外观）、编辑器（写作时的行为）、同步、插件、关于。
 
 // appVersion 是界面上显示的版本号。
-const appVersion = "0.2.0"
+const appVersion = "0.2.1"
 
 // settingsPage 是一个设置页。
 type settingsPage struct {

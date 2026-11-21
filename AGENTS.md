@@ -49,9 +49,11 @@ go build -trimpath -ldflags="-H windowsgui -s -w" -o build/papero.exe .
 
 发版就是：`git tag v0.2.1 && git push origin v0.2.1`。
 
-**版本号要三处一致**：`mygo.json`、`internal/app/settings.go` 的 `appVersion`、推的 tag。
-客户端自更新拿 `appVersion` 和 tag 比（`internal/update`），对不上就永远「已是最新」
-或者反复提示同一版。`appVersion` 是 `const`，ldflags 注入不了，只能手改。
+**版本号要四处一致**：`mygo.json`、`internal/app/settings.go` 的 `appVersion`、推的 tag、
+`CHANGELOG.md` 里那一节的标题。客户端自更新拿 `appVersion` 和 tag 比（`internal/update`），
+对不上就永远「已是最新」或者反复提示同一版；CHANGELOG 少了那一节，release 正文会退回
+GitHub 自动生成的提交列表——应用里的「更新日志」浮层显示的就是它，那就成了流水账。
+`appVersion` 是 `const`，ldflags 注入不了，只能手改。
 
 **产物名不要改**：客户端按 `papero-<goos>-<goarch>[.exe]` 认文件，按 `SHA256SUMS.txt`
 认摘要（`internal/update`）。改了名字等于把老版本的更新通道切断——老版本会报

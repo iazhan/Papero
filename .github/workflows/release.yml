@@ -143,6 +143,8 @@ jobs:
     permissions:
       contents: write        # gh release create 要写权限，别的 job 只读
     steps:
+      - uses: actions/checkout@v7
+
       - uses: actions/download-artifact@v8
         with:
           path: dist
@@ -155,9 +157,31 @@ jobs:
           ls -l
           sha256sum papero-* > SHA256SUMS.txt
 
+      # 应用里的「更新日志」显示的就是 release 正文，所以正文要是人话：
+      # 从 CHANGELOG.md 里取这一版那一节，而不是让 GitHub 列提交标题。
+      - name: 取出这一版的更新日志
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          awk -v v="${TAG#v}" '
+            $0 == "## " v { insec = 1; next }
+            /^## / && insec { exit }
+            insec { print }
+          ' CHANGELOG.md > notes.md
+          if [ -s notes.md ]; then
+            echo "用了 CHANGELOG.md 的 ${TAG#v} 一节（$(wc -l < notes.md) 行）"
+          else
+            echo "CHANGELOG.md 里没有 ${TAG#v}，改让 GitHub 生成"
+          fi
+
       - name: 建 Release
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           TAG: ${{ github.ref_name }}
-        run: gh release create "$TAG" dist/* --title "$TAG" --generate-notes
+        run: |
+          if [ -s notes.md ]; then
+            gh release create "$TAG" dist/* --title "Papero $TAG" --notes-file notes.md
+          else
+            gh release create "$TAG" dist/* --title "Papero $TAG" --generate-notes
+          fi

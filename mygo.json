@@ -2,7 +2,7 @@
   "name": "Papero",
   "slug": "papero",
   "identifier": "dev.papero.app",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "icon": "design/icons/png-flat/papero-flat-1024.png",
   "main": ".",
   "out": "build",
