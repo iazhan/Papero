@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -209,5 +210,39 @@ func TestRepoRemoteRefusesWrongLayout(t *testing.T) {
 		t.Fatal("子目录时应当报错")
 	} else if !strings.Contains(err.Error(), "子目录") {
 		t.Errorf("错误没说清：%v", err)
+	}
+}
+
+// TestSamePathAcrossSpellings 同一个目录换个写法也要认出来：Windows 上
+// junction、8.3 短名、正反斜杠都会让「库根 = 仓库根」看起来是两个路径。
+//
+// GitHub 的 runner 就是这么翻车的：git rev-parse 回的 toplevel 和 Go 拿到的
+// 临时目录写法不一样，四个 TestRepoRemote* 全报「库是仓库的子目录」。
+func TestSamePathAcrossSpellings(t *testing.T) {
+	dir := t.TempDir()
+	if !samePath(dir, dir) {
+		t.Fatal("自己和自己都不等")
+	}
+	// 正反斜杠与大小写
+	if !samePath(filepath.ToSlash(dir), dir) {
+		t.Error("正斜杠写法没认出来")
+	}
+	if runtime.GOOS == "windows" && !samePath(strings.ToUpper(dir), dir) {
+		t.Error("全大写写法没认出来")
+	}
+	if samePath(dir, filepath.Join(dir, "sub")) {
+		t.Error("父目录和子目录不该相等")
+	}
+
+	// junction：同一个目录的另一个名字（mklink /J 不需要管理员）
+	if runtime.GOOS != "windows" {
+		return
+	}
+	link := filepath.Join(t.TempDir(), "link")
+	if out, err := exec.Command("cmd", "/c", "mklink", "/J", link, dir).CombinedOutput(); err != nil {
+		t.Skipf("建不了 junction，跳过：%v %s", err, out)
+	}
+	if !samePath(link, dir) {
+		t.Error("junction 与它指向的目录没认出来是同一处")
 	}
 }

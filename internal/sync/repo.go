@@ -82,7 +82,8 @@ func (r *RepoRemote) ensure(ctx context.Context) error {
 		return fmt.Errorf("%s 不是一个 git 仓库：%w", root, err)
 	}
 	if top := strings.TrimSpace(out); !samePath(top, root) {
-		return fmt.Errorf("知识库是仓库 %s 的子目录：这种模式要求库根本身就是仓库根", top)
+		// 两个路径都印出来：真出问题时（另一台机器上的写法差异）只看一个没法判断
+		return fmt.Errorf("知识库是仓库 %s 的子目录（库根 %s）：这种模式要求库根本身就是仓库根", top, root)
 	}
 	url, err := r.git(ctx, "remote", "get-url", "origin")
 	if err != nil {
@@ -132,8 +133,18 @@ func (r *RepoRemote) filtersOn(ctx context.Context) bool {
 	return false
 }
 
-// samePath 比两个路径是不是同一处。Windows 上大小写和斜杠写法都不敏感。
+// samePath 报告两个路径是不是同一个目录。
+//
+// 先比文件本身，再退回比字符串：Windows 上同一个目录有很多种写法——大小写、正反斜杠、
+// 8.3 短名（RUNNER~1）、junction。GitHub 的 runner 上 `git rev-parse --show-toplevel`
+// 回的常常不是 Go 那一侧拿到的写法，纯字符串比较会把「库根就是仓库根」误判成
+// 「库是仓库的子目录」，同步直接报错退出。
 func samePath(a, b string) bool {
+	if sa, err := os.Stat(a); err == nil {
+		if sb, err := os.Stat(b); err == nil {
+			return os.SameFile(sa, sb)
+		}
+	}
 	ca, err := filepath.Abs(a)
 	if err != nil {
 		return false
