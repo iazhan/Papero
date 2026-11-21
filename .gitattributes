@@ -1,0 +1,12 @@
+# 换行：工作区与仓库都用 LF。
+#
+# 这台机器上 core.autocrlf=true（Windows 默认），不加这条的话检出会把 .go 换成 CRLF，
+# 而 CI 在 Linux 上是 LF——同一份文件两边 diff 全是换行，看着像改了其实没改。
+* text=auto eol=lf
+
+# 二进制：让 Git 别碰
+*.png binary
+*.ico binary
+*.ttf binary
+*.pdf binary
+*.exe binary

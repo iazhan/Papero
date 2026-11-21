@@ -1,0 +1,34 @@
+# 构建产物：make build / mygo build 只往这里写
+/build/
+*.exe
+*.dmg
+*.deb
+
+# 临时文件：截图、诊断渲染、渲染中间产物
+/tmp/
+
+# 根目录随手截的图（go run . -shot 预览.png 就会落在仓库根）
+/*.png
+
+# 测试与性能分析的临时产物
+*.test
+*.out
+*.prof
+
+# 工具的工作目录（项目规则的正式落点是 AGENTS.md）
+/.workbuddy/
+
+# 参考用的第三方仓库与 PDF：只在本地查阅，不进版本库
+/ref/
+
+# 图标的历史版本（旧的 SVG 与各尺寸导出）：本地留档，不进版本库
+/design/icons/_old/
+
+# 知识库里的 Papero 内部目录
+.papero/
+
+# 编辑器与系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

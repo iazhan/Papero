@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <title>Papero (flat, small)</title>
+  <g transform="translate(256,256) scale(1.28) translate(-252,-252) translate(0,10)">
+    <!-- 两根，和完整版一致；小尺寸下加粗，缩到 32px 还能分开 -->
+    <path d="M208 116 C206 88 188 70 170 68 M208 116 C212 90 232 74 250 78" fill="none" stroke="#EA6A1F" stroke-width="22" stroke-linecap="round"/>
+    <rect x="96" y="104" width="248" height="300" rx="44" fill="#FFFFFF" stroke="#B8B2A0" stroke-width="10"/>
+    <path d="M340 194 L420 228 L340 264 Z" fill="#EA6A1F"/>
+    <circle cx="288" cy="192" r="38" fill="#1F2937"/>
+    <rect x="148" y="306" width="150" height="28" rx="14" fill="#D8D8D6"/>
+    <rect x="148" y="356" width="104" height="30" rx="15" fill="#2563EB"/>
+  </g>
+</svg>

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <title>Papero (flat)</title>
+  <!-- 无底色版：纸片本身要有轮廓，否则在浅色背景上会消失 -->
+  <g transform="translate(256,256) scale(1.3) translate(-252,-249.5) translate(0,14)">
+    <path d="M214 120 C212 88 194 72 178 70 M214 120 C218 92 238 76 254 80" fill="none" stroke="#EA6A1F" stroke-width="11" stroke-linecap="round"/>
+    <rect x="106" y="110" width="228" height="291" rx="39" fill="#FFFFFF" stroke="#B8B2A0" stroke-width="7"/>
+    <path d="M335 205 L398 228 L335 252 Z" fill="#EA6A1F" stroke="#EA6A1F" stroke-width="8" stroke-linejoin="round"/>
+    <circle cx="276" cy="190" r="22" fill="#1F2937"/>
+    <circle cx="284" cy="181" r="7" fill="#FFFFFF"/>
+    <rect x="154" y="262" width="134" height="20" rx="10" fill="#D8D8D6"/>
+    <rect x="154" y="306" width="87" height="20" rx="10" fill="#D8D8D6"/>
+    <rect x="154" y="350" width="71" height="24" rx="12" fill="#2563EB"/>
+  </g>
+</svg>

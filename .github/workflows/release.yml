@@ -1,0 +1,163 @@
+# 打 tag 才编译，编完直接发 Release。
+#
+# 平时推分支不跑：一次全量测试 40 秒、三个平台各编一遍，push 一次就烧一次额度，
+# 而产物只有发版那一次有人用。要临时验一下流水线，用 Actions 页面的 Run workflow
+# 手动跑——手动跑只编译不发布（github.ref 不是 tag，release 那步自动跳过）。
+#
+# 顺序：check（fmt/vet/test）→ build（三平台）→ release（只在 tag 上）。
+# 检查挡在编译前面是有意的：发版不该把一个测试红的 commit 挂上去。
+#
+# 三个平台都从 windows-latest 交叉编译：mygo 不用 cgo，所以哪台机器都能编
+# （`go build` 里那句 "no cgo, so any platform can be compiled from any machine"）。
+# 检查放 Windows 上跑，是因为这个项目的主场就是 Windows——测试里那些
+# 路径分隔符、字体、窗口行为的用例只在 Windows 上才有意义。
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# 同一个 tag 重复推（改了又 force push 标签）时，前一次没跑完就没必要跑完。
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: 检查（fmt / vet / test）
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      # 版本从 go.mod 读，不在这里写死：go.mod 升到 1.27.4 时不用回来改 CI。
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          check-latest: true
+
+      # 用 bash 写是因为要把 gofmt 的输出存进变量比较；pwsh 里拿多行输出更容易出错。
+      - name: gofmt
+        shell: bash
+        run: |
+          out=$(gofmt -l .)
+          if [ -n "$out" ]; then
+            echo "以下文件没过 gofmt："
+            echo "$out"
+            exit 1
+          fi
+
+      - name: go vet
+        run: go vet ./...
+
+      # -count=1 关掉测试缓存：缓存命中会让「本地过了」变成「CI 里其实没跑」。
+      - name: go test
+        run: go test ./... -count=1
+
+  build:
+    name: 编译 ${{ matrix.goos }}/${{ matrix.goarch }}
+    needs: check
+    runs-on: windows-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - goos: windows
+            goarch: amd64
+            out: papero-windows-amd64.exe
+            # Windows 上少了 -H windowsgui，双击会先弹一个黑色控制台窗口。
+            ldflags: -H windowsgui -s -w
+          - goos: linux
+            goarch: amd64
+            out: papero-linux-amd64
+            ldflags: -s -w
+          - goos: darwin
+            goarch: arm64
+            out: papero-darwin-arm64
+            ldflags: -s -w
+    env:
+      GOOS: ${{ matrix.goos }}
+      GOARCH: ${{ matrix.goarch }}
+      CGO_ENABLED: "0"
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          check-latest: true
+
+      - name: 编译
+        shell: bash
+        env:
+          LDFLAGS: ${{ matrix.ldflags }}
+        run: |
+          mkdir -p dist
+          go build -trimpath -ldflags="$LDFLAGS" -o "dist/${{ matrix.out }}" .
+          ls -lh "dist/${{ matrix.out }}"
+
+      # 光编译过不算数：ldflags 少一个 -H windowsgui 也能编出来，只是双击多一个黑窗。
+      # 所以直接读 PE 头的 Subsystem（应该等于 2 = GUI，3 是控制台）。
+      - name: 校验 PE 子系统是 GUI
+        if: matrix.goos == 'windows'
+        shell: pwsh
+        run: |
+          $path = (Resolve-Path "dist/${{ matrix.out }}").Path
+          $b = [IO.File]::ReadAllBytes($path)
+          $pe = [BitConverter]::ToInt32($b, 0x3C)          # DOS 头里 e_lfanew
+          $sub = [BitConverter]::ToUInt16($b, $pe + 4 + 20 + 68)
+          if ($sub -ne 2) {
+            throw "Subsystem = $sub，不是 GUI(2)：ldflags 里的 -H windowsgui 丢了"
+          }
+          "Subsystem = $sub (GUI)，大小 {0:N0} 字节" -f $b.Length
+
+      - name: 摘要
+        shell: bash
+        run: |
+          {
+            echo "### ${{ matrix.goos }}/${{ matrix.goarch }}"
+            echo ""
+            echo "- 产物：\`${{ matrix.out }}\`"
+            echo "- 提交：\`${GITHUB_SHA:0:7}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: papero-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: dist/${{ matrix.out }}
+          if-no-files-found: error
+          retention-days: 7        # 只是中转，最终落在 Release 上
+
+  release:
+    name: 发布 ${{ github.ref_name }}
+    needs: build
+    # 手动 Run workflow 时不发 Release：那不是一次发版，只是验流水线。
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write        # gh release create 要写权限，别的 job 只读
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: dist
+          merge-multiple: true
+
+      # 三个产物文件名各自带平台，merge 到一个目录里不会撞名。
+      - name: 生成校验和
+        run: |
+          cd dist
+          ls -l
+          sha256sum papero-* > SHA256SUMS.txt
+
+      - name: 建 Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: gh release create "$TAG" dist/* --title "$TAG" --generate-notes

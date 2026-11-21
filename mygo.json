@@ -1,0 +1,29 @@
+{
+  "name": "Papero",
+  "slug": "papero",
+  "identifier": "dev.papero.app",
+  "version": "0.2.0",
+  "icon": "design/icons/png-flat/papero-flat-1024.png",
+  "main": ".",
+  "out": "build",
+  "resources": ["LICENSE", "NOTICE.md"],
+  "fileAssociations": [
+    {
+      "ext": [
+        "md",
+        "markdown"
+      ],
+      "name": "Markdown 文稿",
+      "mimeType": "text/markdown",
+      "role": "Editor"
+    },
+    {
+      "ext": [
+        "excalidraw"
+      ],
+      "name": "Papero 白板",
+      "mimeType": "application/json",
+      "role": "Editor"
+    }
+  ]
+}
