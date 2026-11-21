@@ -12,6 +12,32 @@ import (
 	"papero/internal/vault"
 )
 
+// shotLang / shotTheme 是截图用的界面语言与明暗，空 = 用默认。
+// 由 main 的 -lang 与 -theme 设置。
+//
+// 官网要给中英文、深浅色各一套截图，而截图走的是 config.Default()——它读不到
+// 用户设置，也就没法从外面切。放在这里比给三个 Shot 函数各加两个参数据省事。
+var (
+	shotLang  string
+	shotTheme string
+)
+
+// SetShotLang 设置截图时的界面语言（"zh" / "en"）。
+func SetShotLang(l string) { shotLang = l }
+
+// SetShotTheme 设置截图时的明暗（"light" / "dark"）。
+func SetShotTheme(t string) { shotTheme = t }
+
+// shotConfig 是截图用的默认配置：临时知识库 + 指定的语言与明暗。
+func shotConfig() *config.Settings {
+	cfg := config.Default()
+	cfg.Language = shotLang
+	if shotTheme != "" {
+		cfg.Theme = shotTheme
+	}
+	return cfg
+}
+
 // isolateConfig 把设置目录指到临时目录，返回还原函数。
 //
 // 截图是开发辅助，但它在临时知识库里 open 文稿时会走到 remember() →
@@ -46,7 +72,7 @@ func ShotFile(out, file string, width, height int, scale float32) error {
 	if err != nil {
 		return err
 	}
-	cfg := config.Default()
+	cfg := shotConfig()
 	cfg.Vault = dir
 	a := New(cfg, v, tree)
 	a.open(filepath.Base(abs))
@@ -100,7 +126,7 @@ func ShotGraph(out string, width, height int, scale float32) error {
 	if err != nil {
 		return err
 	}
-	cfg := config.Default()
+	cfg := shotConfig()
 	cfg.Vault = dir
 	cfg.GraphMode = "window"
 	a := New(cfg, v, tree)
@@ -154,7 +180,7 @@ func Shot(out string, width, height int, scale float32, tabs int) error {
 	if err != nil {
 		return err
 	}
-	cfg := config.Default()
+	cfg := shotConfig()
 	cfg.Vault = dir
 	a := New(cfg, v, tree)
 	a.open("notes/欢迎使用 Papero.md")

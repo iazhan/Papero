@@ -19,9 +19,13 @@ func main() {
 	height := flag.Int("height", 820, "渲染高度")
 	scale := flag.Float64("scale", 2, "渲染缩放")
 	tabs := flag.Int("tabs", 1, "配合 -shot：打开多少个标签，用来检查标签栏溢出")
+	lang := flag.String("lang", "", "配合 -shot：界面语言 zh / en，空 = 中文")
+	theme := flag.String("theme", "", "配合 -shot：明暗 light / dark，空 = 跟随系统")
 	flag.Parse()
 
 	if *shot != "" {
+		app.SetShotLang(*lang)
+		app.SetShotTheme(*theme)
 		var err error
 		if *graph {
 			err = app.ShotGraph(*shot, *width, *height, float32(*scale))
